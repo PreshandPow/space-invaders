@@ -3,7 +3,7 @@ from laser import Laser
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, speed, xConstraint, yConstraint):
+    def __init__(self, pos, speed, xConstraint, yConstraint, laserSound):
         super().__init__()
         self.image = pygame.transform.scale(pygame.image.load('Space-Invaders-ship.png'), (100, 100))
         self.rect = self.image.get_rect(midbottom = pos)
@@ -13,6 +13,7 @@ class Player(pygame.sprite.Sprite):
         self.ready = True
         self.laserTime = 0
         self.laserCooldown = 500
+        self.laserSound = laserSound
 
         self.lasers = pygame.sprite.Group()
 
@@ -26,6 +27,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.x += self.speed
 
         if keys[pygame.K_SPACE] and self.ready:
+            self.laserSound.play()
             self.shootLaser()
             self.ready = False
             self.laserTime = pygame.time.get_ticks()
@@ -47,7 +49,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.right = self.xConstraint
 
 
-    def update(self):
+    def update(self, laserSound):
         self.getInput()
         self.constraints()
         self.recharge()

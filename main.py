@@ -1,5 +1,5 @@
 import pygame, sys
-from mainGame import GameLoop
+from mainGame import GameLoop, CRT
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import pygame
 class Laser(pygame.sprite.Sprite):
     def __init__(self, pos, speed, surfaceHeight):
         super().__init__()
-        self.image = pygame.transform.scale(pygame.image.load('laserpixil-frame-0.png'), (100, 100))
+        self.image = pygame.transform.scale(pygame.image.load('laserpixil-frame-0.png'), (10, 30))
         self.rect = self.image.get_rect(center = pos)
         self.speed = speed
         self.surfaceHeight = surfaceHeight
