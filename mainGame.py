@@ -106,7 +106,7 @@ class GameLoop:
                 self.alienDirection = -5
 
             if alien.rect.left <= 0:
-                self.alienMoveDown(2)
+                self.alienMoveDown(5)
                 self.alienDirection = 5
 
     def alienMoveDown(self, distance):
@@ -198,7 +198,6 @@ class GameLoop:
         pygame.time.set_timer(ALIENLASER, 2000)
 
         CRTInstance = CRT(self.surface)
-
 
         run = True
         while run:
