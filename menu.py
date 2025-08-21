@@ -1,21 +1,18 @@
 import pygame
 
-class Menu:
-    def __init__(self, gameSurfaceWidth, gameSurfaceHeight):
-        self.surface = pygame.display.set_mode((gameSurfaceWidth, gameSurfaceHeight))
-        self.surfaceWidth = gameSurfaceWidth
-        self.surfaceHeight = gameSurfaceHeight
-        self.background = pygame.transform.scale(pygame.image.load('background.jpg').convert_alpha(),(gameSurfaceWidth, gameSurfaceHeight))
-        self.font = pygame.font.Font('LEMONMILK-Bold.otf', 100)
 
+class Menu:
+    def __init__(self, gameSurfaceWidth, gameSurfaceHeight, sessionInfo):
+        # Utility
         self.surface = pygame.display.set_mode((gameSurfaceWidth, gameSurfaceHeight))
         self.surfaceWidth = gameSurfaceWidth
         self.surfaceHeight = gameSurfaceHeight
         self.background = pygame.transform.scale(pygame.image.load('background.jpg').convert_alpha(),
                                                  (gameSurfaceWidth, gameSurfaceHeight))
         self.font = pygame.font.Font('LEMONMILK-Bold.otf', 100)
+        self.dataStore = sessionInfo
 
-        # Pre-render the text to make the loop more efficient
+        #  Text is rendered early to make the loop more efficient
         self.playText = self.font.render('PLAY', True, 'white')
         self.leaderboardText = self.font.render('LEADERBOARD', True, 'white')
         self.titleText = self.font.render('Space Invaders', True, 'red')
@@ -36,7 +33,6 @@ class Menu:
                     if leaderboardTextRect.collidepoint(event.pos):
                         return 'leaderboard'
 
-            # Blit the background first
             self.surface.blit(self.background, (0, 0))
 
             # Render and blit the text with hover effect
@@ -46,7 +42,7 @@ class Menu:
                 play_text = self.font.render('PLAY', True, 'red')
             self.surface.blit(play_text, playTextRect)
 
-            # Leaderboard button
+            # Leaderboard
             leaderboard_text = self.font.render('LEADERBOARD', True, 'white')
             if leaderboardTextRect.collidepoint(pygame.mouse.get_pos()):
                 leaderboard_text = self.font.render('LEADERBOARD', True, 'red')

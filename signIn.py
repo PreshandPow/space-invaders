@@ -28,7 +28,7 @@ class InputBox:
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # If the user clicked on the input box, toggle active state
+            # If the user's clicked on the input box, toggle active state
             if self.rect.collidepoint(event.pos):
                 self.active = True
                 self.draw_placeholder = False
@@ -62,7 +62,7 @@ class InputBox:
 
         screen.blit(txt_surface, (self.rect.x + 5, self.rect.y + 5))
 
-        # Draw placeholder text if active and text is empty
+        # Draw placeholder text if active and the text-bar is empty
         if not self.active and not self.text:
             placeholder_surface = self.font.render(self.placeholder_text, True, self.placeholder_color)
             screen.blit(placeholder_surface, (self.rect.x + 5, self.rect.y + 5))
@@ -72,9 +72,12 @@ class InputBox:
 
 class SignIn:
     def __init__(self, data_store, surfaceWidth, surfaceHeight):
+        # Utility
         self.Session_Info = data_store
         self.surface = pygame.display.set_mode((surfaceWidth, surfaceHeight))
 
+
+        # Colours
         self.BLACK = (0, 0, 0)
         self.WHITE = (255, 255, 255)
         self.RED = (255, 0, 0)
@@ -95,12 +98,15 @@ class SignIn:
         self.PRIMARY_TEXT = (74, 67, 61)
         self.SECONDARY_TEXT = (120, 114, 106)
 
+        # Database
         self.DB_FILE_PATH = os.path.join(os.path.dirname(__file__), 'spaceInvadersDatabase.sqlite')
 
+        # Animation Rects
         self.highlight_rect_width = 190
         self.highlight_rect_height = 60
         self.highlight_rect_y = 136
 
+        # Login and signup rects
         self.login_rect_target = pygame.Rect(620, self.highlight_rect_y, self.highlight_rect_width,
                                              self.highlight_rect_height)
         self.sign_up_rect_target = pygame.Rect(833, self.highlight_rect_y, self.highlight_rect_width,
@@ -108,6 +114,7 @@ class SignIn:
 
         self.current_highlight_rect = pygame.Rect(0, 0, 0, 0)
 
+        # Animation
         self.is_animating_highlight = False
         self.animation_start_time = 0
         self.animation_duration = 120
@@ -173,8 +180,8 @@ class SignIn:
         if self.highlight_active:
             pygame.draw.rect(self.surface, self.RICH_BLACK, self.current_highlight_rect, border_radius=2)
 
-        sign_in_text = font.render('Log In', True, (self.TAB_TEXT_INACTIVE))
-        log_in_text = font.render('Sign Up', True, (self.TAB_TEXT_INACTIVE))
+        sign_in_text = font.render('Log In', True, self.TAB_TEXT_INACTIVE)
+        log_in_text = font.render('Sign Up', True, self.TAB_TEXT_INACTIVE)
         self.surface.blit(sign_in_text, (643, 137))
         self.surface.blit(log_in_text, (843, 138))
 
@@ -223,7 +230,6 @@ class SignIn:
         self.login_password_box.draw(self.surface)
 
     def display_sign_up(self):
-        # Add a similar method for sign up
         font = pygame.font.Font('LEMONMILK-Medium.otf', 20)
         enter_username_text = font.render('Enter Username', True, (self.OUTER_SPACE))
         enter_password_text = font.render('Enter Password', True, (self.OUTER_SPACE))
@@ -237,28 +243,15 @@ class SignIn:
     def handle_login(self):
         username = self.login_username_box.text
         password = self.login_password_box.text
-
-        # --- WRITE YOUR LOGIN SQL CODE HERE ---
-        # Example: Check if the user exists with the given username and password.
-        # query = "SELECT * FROM tblUser WHERE username=? AND password=?"
-        # result = self.runsql(query, (username, password))
-        #
-        # if result:
-        #     print("Login successful!")
-        #     # Return a success state or change the game state
-        # else:
-        #     print("Invalid username or password.")
-        #     # Show an error message to the user
-
         result = self.runsql('''
             select * from tblUser where username = ? and password = ?
         ''', (username, password))
 
-        print(username, password, result)
 
         if result:
             print('Log in is successful')
-            return True
+            self.Session_Info.add_data('username', username)
+            return username, True
         else:
             print('Invalid username or password please try again')
 
@@ -266,20 +259,13 @@ class SignIn:
         username = self.signup_username_box.text
         password = self.signup_password_box.text
 
-        # --- WRITE YOUR SIGN UP SQL CODE HERE ---
-        # Example: Insert a new user into the database.
-        # query = "INSERT INTO tblUser (username, password) VALUES (?, ?)"
-        # self.runsql(query, (username, password))
-        #
-        # print("Sign up successful!")
-        # Show a success message
         try:
             self.runsql('''
                 insert into tblUser (username, password) values (?, ?)
             ''', (username, password))
 
             print('Sign up is successful')
-            print(username, password)
+            self.Session_Info.add_data('username', username)
             return True
 
         except sqlite3.IntegrityError:
@@ -289,9 +275,6 @@ class SignIn:
             print(f"Sign up failed due to a database error: {e}")
 
         return False
-
-
-
 
     def show_screen(self):
         on_log = False
@@ -317,7 +300,7 @@ class SignIn:
                     self.signup_username_box.handle_event(event)
                     self.signup_password_box.handle_event(event)
 
-                # Handle the Enter key press
+                # Allow the user to confirm by pressing enter as well
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     if on_log:
                         print("Log In via Enter key")
@@ -326,7 +309,6 @@ class SignIn:
                         print("Sign Up via Enter key")
                         self.handle_signup()
 
-                # Handle button clicks
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     # Check for Log In tab click
                     if self.login_rect_target.collidepoint(mouse_pos):
@@ -352,7 +334,7 @@ class SignIn:
                             self._start_highlight_animation(self.sign_up_rect_target)
                             self.active_tab = 'sign'
 
-                    # Check for the main submission button click
+                    # Check for submission
                     elif self.submit_button_rect.collidepoint(mouse_pos):
                         if on_log:
                              if self.handle_login():
@@ -378,7 +360,7 @@ class SignIn:
 
         return True
 
-    # Add this helper method to your class to keep the code clean
+    # Helper method to clean the code a bit
     def _draw_submit_button(self):
         pygame.draw.rect(self.surface, self.RICH_BLACK, self.submit_button_rect, border_radius=10)
         font = pygame.font.Font('LEMONMILK-Medium.otf', 30)

@@ -1,13 +1,18 @@
-import pygame, sys, random
+import pygame, sys, random, sqlite3
 from player import Player
 import obstacle
 from alien import Alien, Extra
 from laser import Laser
 
+
 class GameLoop:
-    def __init__(self, surfaceWidth, surfaceHeight):
+    def __init__(self, surfaceWidth, surfaceHeight, difficulty_level, sessionInfo):
         self.surfaceWidth = surfaceWidth
         self.surfaceHeight = surfaceHeight
+        self.difficulty = difficulty_level  # Store the difficulty
+        self.dataStore = sessionInfo
+        self.username = self.dataStore.get_data('username')
+
 
         # Health and Score setup
         self.lives = 3
@@ -58,7 +63,34 @@ class GameLoop:
         self.extra = pygame.sprite.GroupSingle()
         self.extraSpawnTime = random.randint(40, 80)
 
+        if self.difficulty == 'easy':
+            self.lives = 3
+            self.alienDirection = 3
+            self.alien_fire_rate = 3000
+        elif self.difficulty == 'normal':
+            self.lives = 2
+            self.multi = 2
+            self.alienDirection = 5
+            self.alien_fire_rate = 2000
+        elif self.difficulty == 'hard':
+            self.multi = 3
+            self.lives = 0
+            self.alienDirection = 7
+            self.alien_fire_rate = 1000
 
+        ALIENLASER = pygame.USEREVENT + 1
+        pygame.time.set_timer(ALIENLASER, self.alien_fire_rate)
+
+    def runsql(self, *args):
+        conn = sqlite3.connect('spaceInvadersDatabase.sqlite')
+        conn.execute('PRAGMA foreign_keys = 1')
+        cursor = conn.cursor()
+        if len(args) == 1:
+            cursor.execute(args[0])
+        else:
+            cursor.execute(args[0], args[1])
+        conn.commit()
+        return cursor.fetchall()
 
     def createObstacles(self, xStart, yStart, offsetX):
         for rowIndex, row in enumerate(self.shape):
@@ -103,11 +135,11 @@ class GameLoop:
 
             if alien.rect.right >= self.surfaceWidth:
                 self.alienMoveDown(2)
-                self.alienDirection = -5
+                self.alienDirection = 0 - self.alienDirection
 
             if alien.rect.left <= 0:
-                self.alienMoveDown(5)
-                self.alienDirection = 5
+                self.alienMoveDown(2)
+                self.alienDirection = 0 - self.alienDirection
 
     def alienMoveDown(self, distance):
         if self.aliens:
@@ -126,6 +158,25 @@ class GameLoop:
             self.extra.add(Extra(random.choice(['right', 'left']), self.surfaceWidth))
             self.extraSpawnTime = random.randint(400, 800)
 
+    def updateHighscore(self):
+        print('updating score')
+        username = self.dataStore.get_data('username')
+        print(username)
+        score = self.score
+
+        highscore_result = self.runsql('SELECT highscore FROM tblUser WHERE username = ?', (username,))
+
+        # Check if a highscore was found for the user
+        if highscore_result:
+            current_highscore = highscore_result[0][0]
+            if score > current_highscore:
+                print('score updated')
+                self.runsql('UPDATE tblUser SET highscore = ? WHERE username = ?', (score, username))
+        else:
+            # This case handles when the user is new or has no highscore yet.
+            print('No highscore found, setting the current score.')
+            self.runsql('UPDATE tblUser SET highscore = ? WHERE username = ?', (score, username))
+
     def collisionChecks(self):
 
         # Player lasers
@@ -140,7 +191,7 @@ class GameLoop:
                 aliensHit = pygame.sprite.spritecollide(laser, self.aliens, True)
                 if aliensHit:
                     for alien in aliensHit:
-                        self.score += alien.value
+                        self.score += alien.value * self.multi
                         self.alienDeathSound.play()
                         laser.kill()
 
@@ -169,8 +220,9 @@ class GameLoop:
                     laser.kill()
                     self.lives -= 1
                     if self.lives <= 0:
-                        print('dead')
+                        self.updateHighscore()
                         self.playerDeathSound.play()
+                        return 'quit'
 
         if self.aliens:
 
@@ -222,7 +274,8 @@ class GameLoop:
             self.extra.update()
 
             # Collisions checker
-            self.collisionChecks()
+            if self.collisionChecks() == 'quit':
+                return 'exit'
 
             # Draw players
             self.player.sprite.lasers.draw(self.surface)
